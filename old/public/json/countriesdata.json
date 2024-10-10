@@ -1,0 +1,48 @@
+[
+	{
+		"countryName": "Algeria",
+		"code": "DZ",
+		"phoneCode": "213"
+	},
+	
+	{
+		"countryName": "Andorra",
+		"code": "AD",
+		"phoneCode": "376"
+	},
+	{
+		"countryName": "Belgium",
+		"code": "BE",
+		"phoneCode": "32"
+	},
+	{
+		"countryName": "France",
+		"code": "FR",
+		"phoneCode": "33"
+	},
+	{
+		"countryName": "French Polynesia",
+		"code": "PF",
+		"phoneCode": "689"
+	},
+	{
+		"countryName": "Luxembourg",
+		"code": "LU",
+		"phoneCode": "352"
+	},
+	{
+		"countryName": "Senegal",
+		"code": "SN",
+		"phoneCode": "221"
+	},
+	{
+		"countryName": "Switzerland",
+		"code": "CH",
+		"phoneCode": "41"
+	},
+	{
+		"countryName": "Thailand",
+		"code": "TH",
+		"phoneCode": "66"
+	}
+]
