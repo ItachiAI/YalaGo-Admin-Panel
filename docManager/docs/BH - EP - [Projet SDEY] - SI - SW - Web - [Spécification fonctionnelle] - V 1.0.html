@@ -1,0 +1,640 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="color-scheme" content="light dark">
+        <style>
+            :root {
+                --main-bg-color: #111;
+                --main-text-color: #818181;
+                --main-separator-color: #333;
+                --main-text-hover-color: #f1f1f1;
+                --summary-doc-start-and-end-color: #555;
+                --summary-horizontal-ref-value: 450px;
+                --doc-sub-title-main-padding-ref-value: 30px;
+                --doc-text-margin-left: 1em;
+                --drawing-area-default-line-color: var(--main-text-color);
+            }
+
+            body {
+                font-family: "Lato", sans-serif;
+                background-color: var(--main-bg-color);
+            }
+
+            .summary {}
+            .summary-left {
+                height: 97%;
+                width: var(--summary-horizontal-ref-value);
+                position: fixed;
+                z-index: 1;
+                top: 0;
+                left: 0;
+                background-color: var(--main-bg-color);
+                overflow-x: auto;
+                padding-top: 10px;
+            }
+            .summary ul {
+                list-style: none;
+            }
+            .summary ul .level1plus{
+                margin-left: -1em;
+            }
+            .summary li::before {
+                content: "";
+                color: var(--main-text-color);
+                font-weight: bold;
+                margin-left: -1.2em;
+            }
+            .summary li {
+                display: block;
+            }
+            .summary a {
+                padding: 6px 8px 6px 16px;
+                text-decoration: none;
+                font-size: 25px;
+                color: var(--main-text-color);
+                margin-left: -0.3em;
+            }
+
+            #mainSplitter {
+                height: 100%;
+                position: fixed;
+                z-index: 2;
+                top: 0;
+                left: calc(var(--summary-horizontal-ref-value) + 5px);
+                background: var(--main-separator-color);
+                width: 5px;
+                cursor: col-resize;
+                margin: 0 0 0 auto;
+            }
+
+            #contents {
+                margin-left: calc(var(--summary-horizontal-ref-value) + 3px);
+                font-size: 28px;
+                color: var(--main-text-color);
+                padding: 10px;
+                background-color: var(--main-bg-color);
+
+                z-index: 1;
+            }
+
+            .summary a:hover {
+                color: var(--main-text-hover-color);
+            }
+
+            .summary .doc-start-and-end {
+                display: block;
+                width: 95%;
+                text-align: center;
+                padding-bottom: 0;
+                padding-top: 0;
+                color: var(--summary-doc-start-and-end-color);
+            }
+
+
+            .contents-separator {
+                background-color: black;
+                height: 0;
+                border: 1px var(--main-separator-color) solid;
+            }
+
+            .page-break {
+                page-break-before: always;
+                page-break-after: always;
+            }
+
+            .font-size-normal {
+                font-size: 1em;
+            }
+            .font-size-1 {
+                font-size: 1px;
+            }
+            .font-size-8 {
+                font-size: 8px;
+            }
+            .font-size-16 {
+                font-size: 16px;
+            }
+            .font-size-32 {
+                font-size: 32px;
+            }
+            .font-size-36 {
+                font-size: 36px;
+            }
+            .font-size-48 {
+                font-size: 48px;
+            }
+            .font-size-64 {
+                font-size: 64px;
+            }
+
+            .boldText {
+                font-weight: bold;
+            }
+
+            .centerText {
+                text-align: center;
+            }
+
+            .no-wrap {
+                white-space: nowrap;
+            }
+
+            .doc-sub-title {
+                font-weight: bold;
+                display: inline-block;
+                padding-top: calc(var(--doc-sub-title-main-padding-ref-value) * 2);
+                padding-bottom: var(--doc-sub-title-main-padding-ref-value);
+            }
+            .doc-sub-title-preceeded-by-no-text {
+                padding-top: calc(var(--doc-sub-title-main-padding-ref-value) / 2);
+            }
+            .doc-text {
+                margin-left: var(--doc-text-margin-left);
+                margin-top: 0;
+                margin-bottom: 0;
+            }
+
+            .drawing-area {
+                padding: 0;
+                margin: 0;
+                background: var(--main-separator-color);
+            }
+
+            ul.std {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+            li.std::before {
+                content: "•";
+                margin-left: calc(-1 * var(--doc-text-margin-left));
+            }
+            li.std {
+                display: block;
+                margin-top: 5px;
+                margin-left: calc(2 * var(--doc-text-margin-left));
+            }
+
+            table {
+                width: 100%;
+                font-size: 24px;
+                border: 1px solid;
+                border-spacing: 0;
+            }
+            th {
+                background-color: var(--main-separator-color);
+            }
+            th,td {
+                border: 1px solid;
+            }
+            td {
+                vertical-align: top;
+            }
+        </style>
+        <script>
+            let hierarchyTags
+            let isMouseDown = false
+
+            let docHierarchyTags = null;
+
+            function onAfterLoad() {
+                mainSplitter.addEventListener('mousedown', mainSplitter_onMouseDown)
+
+                buildDocHierarchy();
+
+                let summaryContents = buildSummary(true);
+
+                document.getElementById("summary-main-ul").innerHTML = summaryContents;
+
+                let summaryContentsBis = buildSummary(false);
+                document.getElementById("summary-bis").innerHTML = summaryContentsBis;
+            }
+
+            function buildDocHierarchy() {
+                if (! docHierarchyTags) {
+                    docHierarchyTags = [...document.getElementsByClassName('doc-sub-title')].filter(x => x.dataset.info);
+                }
+
+                let currentId = [];
+                let currentLevel = 0;
+                for (let e of docHierarchyTags) {
+                    let relativeLevel = 0;
+                    if (e.dataset.info) {
+                        let json = null;
+                        try {
+                            json = JSON.parse(e.dataset.info.replaceAll(/'/g, '"'));
+                        } catch (err) {
+                            console.error(err);
+                            break;
+                        }
+                        relativeLevel = (json.relativeLevel ? Number(json.relativeLevel) : 0);
+                    }
+
+                    currentLevel += relativeLevel;
+
+                    if (relativeLevel > 0) { // Normally << relativeLevel == 1 >>.
+                        currentId.push(1);
+                    } else if (relativeLevel < 0) {
+                        for (let i = 0; i < -relativeLevel; i++) {
+                            currentId.pop();
+                        }
+                        currentId[currentId.length - 1]++;
+                    } else { // << relativeLevel == 0 >>.
+                        currentId[currentId.length - 1]++;
+                    }
+
+                    e.id = currentId.join('.') + '.';
+                    e.innerHTML = e.id + " " + e.innerHTML;
+                }
+            }
+
+            function buildSummary(forLeftNavBar, id) {
+                let summaryContents = "";
+
+                let a;
+
+                if (id) {
+                    a = document.getElementById(id);
+                    if (! a) {
+                        return null;
+                    }
+
+                    let s1 = '';
+                    let s2 = '';
+                    let s3 = '';
+                    if (forLeftNavBar) {
+                        s1 = '<span style="padding-top: 0; padding-bottom: 0; font-size: 15px;">';
+                        s2 = '</span>';
+                        s3 = 'style="padding-top: 0; padding-bottom: 0; font-size: 15px;"';
+                    }
+                    summaryContents += `<li><a href="#${id}"${s3}>${s1}${a.innerHTML}${s2}</a></li>`;
+                } else {
+                    id = '';
+                }
+
+                for (let i = 1; ; i++) {
+                    let childId = id + i + ".";
+                    let sc = buildSummary(forLeftNavBar, childId);
+                    if (! sc) {
+                        break;
+                    }
+                    if (sc !== '') {
+                        let s = '';
+                        if (! forLeftNavBar) {
+                            s = ' style="margin-top: 0; margin-bottom: 0;"';
+                        }
+                        summaryContents += `<ul class="level1plus"${s}>`;
+                        summaryContents += sc;
+                        summaryContents += '</ul>';
+                    }
+                }
+
+                return summaryContents;
+            }
+
+            function mainSplitter_onMouseDown(event) {
+                isMouseDown = true
+                document.body.addEventListener('mousemove', mainSplitter_onMouseMove)
+                document.body.addEventListener('mouseup', endResize)
+            }
+
+            function mainSplitter_onMouseMove(event) {
+                if (isMouseDown) {
+                    summary.style.width = (event.clientX - 6) + 'px';
+                    mainSplitter.style.left = (event.clientX - 1) + 'px';
+                    contents.style.marginLeft = (event.clientX - 4) + 'px';
+                } else {
+                    endResize()
+                }
+            }
+            const endResize = (e) => {
+                isMouseDown = false
+                document.body.removeEventListener('mouseup', endResize)
+                mainSplitter.removeEventListener('mousemove', mainSplitter_onMouseMove)
+            }
+
+            window.onload = onAfterLoad;
+        </script>
+
+        <!-- Mermaid representation script. -->
+        <script src="https://unpkg.com/mermaid@8.0.0/dist/mermaid.min.js"></script>
+    </head>
+    <body>
+        <div id="summary" class="summary summary-left no-wrap">
+            <a href="#start" class="doc-start-and-end">=== Début du document ===</a>
+            <span id="summary-contents" style="margin: 0; padding: 0;">
+                <ul id="summary-main-ul" style="margin-top: 0; margin-bottom: 0;">&nbsp;</ul>
+            </span>
+            <a href="#end" class="doc-start-and-end">=== Fin du document ===</a>
+        </div>
+        <div id="mainSplitter">&nbsp;</div>
+        <div id="contents">
+            <a id="start"/>
+            <a id="internalDocRef_MainTitle"/>
+            <div class="boldText centerText">
+                <div class="font-size-64"><br/><br/><br/><br/><br/></div>
+                <div class="font-size-64">BH Technologies</div>
+                <div class="font-size-32">&nbsp;</div>
+                <div class="font-size-48">Projet "BH Node - Mesh - SDEY"<br/>Spécification fonctionnelle</div>
+                <div class="font-size-8">&nbsp;</div>
+                <div class="font-size-32"><i>par Yanis CHIKIROU et Marius FLOREA</i></div>
+                <div class="font-size-16">&nbsp;</div>
+                <div class="font-size-16"><i>(2024-04-22 - 2024-04-22</i></div>
+                <div class="font-size-32">&nbsp;</div>
+                <div class="font-size-48">V 1.0</div>
+                <br/>
+            </div>
+            <div class="contents-separator">&nbsp;</div>
+            <div class="font-size-16">&nbsp;</div>
+            <div class="font-size-1 page-break">&nbsp;</div>
+            <table>
+                <tr>
+                    <th style="width: 1%;">Version</th>
+                    <th style="width: 130px;">Date&nbsp;début</th>
+                    <th style="width: 130px;">Date&nbsp;fin</th>
+                    <th style="width: 250px;">Auteur</th>
+                    <th>Change log</th>
+                </tr>
+                <tr>
+                    <td style="text-align: center;">1.0</td>
+                    <td style="text-align: center;">2024-04-22</td>
+                    <td style="text-align: center;">2024-04-22</td>
+                    <td style="text-align: center;">Yanis CHIKIROU<br/>et<br/>Marius FLOREA</td>
+                    <td style="padding-left: 10px;">Version initiale</td>
+                </tr>
+            </table>
+            <div class="font-size-16">&nbsp;</div>
+            <div class="contents-separator">&nbsp;</div>
+            <div class="font-size-48">&nbsp;</div>
+            <div class="font-size-1 page-break">&nbsp;</div>
+
+            <div class="boldText centerText">
+                <div class="font-size-48">&nbsp;</div>
+                <div class="font-size-32"><u>Table des matières</u></div>
+                <br/>
+            </div>
+            <div id="summary-bis" class="summary no-wrap">&nbsp;</div>
+            <br/>
+            <div class="contents-separator">&nbsp;</div>
+            <div class="font-size-48">&nbsp;</div>
+            <div class="font-size-1 page-break">&nbsp;</div>
+
+<!--
+            <a data-info="{'relativeLevel': '+1'}" class="doc-sub-title">Bla bla bla "A."</a><br/>
+                <a data-info="{'relativeLevel': '+1'}" class="doc-sub-title doc-sub-title-preceeded-by-no-text">Bla bla bla "A.A."</a><br/>
+                    <p class="doc-text">
+                        Texte texte texte texte texte texte texte :<br/>
+                        - Item 1<br/>
+                        - Item 2<br/>
+                        - Item 3<br/>
+                        Texte texte texte texte texte texte texte.
+                    </p>
+                <a data-info="{'relativeLevel': '0'}" class="doc-sub-title">Bla bla bla "A.B."</a><br/>
+                    <p class="doc-text">
+                        Texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                        texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                        texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte.
+                     </p>
+                    <br/>
+                    <p class="doc-text">
+                        Texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                        texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                        texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte.
+                        Texte texte texte texte texte texte texte texte texte texte :<br/>
+                        • Texte texte texte texte texte texte texte.<br/>
+                        • Texte texte texte texte texte texte texte.<br/>
+                        • Texte texte texte texte texte texte texte.<br/>
+                        • Texte texte texte texte texte texte texte.
+                    </p>
+                <a data-info="{'relativeLevel': '0'}" class="doc-sub-title">Bla bla bla "A.C."</a><br/>
+                    <p class="doc-text">
+                        Texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                        texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte.<br/>
+                        <br/>
+                        Texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                        texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte.<br/>
+                        Texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                        texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte.<br/>
+                        Texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                        texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte.
+                    </p>
+                <a data-info="{'relativeLevel': '0'}" class="doc-sub-title">Bla "A.D."</a><br/>
+                    <p class="doc-text">
+                        <b>Texte en gras.</b><br/>
+                        <br/>
+                        <b><u>Un petit arbre non-collapsible :</u></b><br/>
+                        • Texte texte texte texte texte texte texte.<br/>
+                        • Texte texte texte texte texte texte texte.<br/>
+                        • Texte texte texte texte texte texte texte.<br/>
+                        • Texte texte texte texte texte texte texte.<br/>
+                        • Texte texte texte texte texte texte texte.<br/>
+                        • Texte texte texte texte texte texte texte.<br/>
+                        • Texte texte texte texte texte texte texte :<br/>
+                        . . • Texte texte.<br/>
+                        . . • Texte texte.<br/>
+                        <br/>
+                        Texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                        texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte.<br/>
+                        Texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                        texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte.
+                    </p>
+                    <a data-info="{'relativeLevel': '+1'}" class="doc-sub-title">Bla "A.D.A."</a><br/>
+                        <p class="doc-text">
+                            <br/>
+                            <b><u>Un petit arbre non-collapsible :</u></b><br/>
+                            • Texte texte texte texte texte texte texte.<br/>
+                            • Texte texte texte texte texte texte texte.<br/>
+                            • Texte texte texte texte texte texte texte.<br/>
+                            • Texte texte texte texte texte texte texte.<br/>
+                            • Texte texte texte texte texte texte texte.<br/>
+                            • Texte texte texte texte texte texte texte.<br/>
+                            • Texte texte texte texte texte texte texte :<br/>
+                            . . • Texte texte.<br/>
+                            . . • Texte texte.<br/>
+                            <br/>
+                            Texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                            texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte.<br/>
+                            Texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                            texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte.
+                        </p>
+                <a data-info="{'relativeLevel': '-1'}" class="doc-sub-title">Bla "A.E."</a><br/>
+                    <a data-info="{'relativeLevel': '+1'}" class="doc-sub-title">Bla "A.E.A."</a><br/>
+                        <p class="doc-text">
+                            <b>Texte en gras.</b><br/>
+                            <br/>
+                            <b><u>Un petit arbre non-collapsible :</u></b><br/>
+                            • Texte texte texte texte texte texte texte.<br/>
+                            • Texte texte texte texte texte texte texte.<br/>
+                            • Texte texte texte texte texte texte texte.<br/>
+                            • Texte texte texte texte texte texte texte.<br/>
+                            • Texte texte texte texte texte texte texte.<br/>
+                            • Texte texte texte texte texte texte texte.<br/>
+                            • Texte texte texte texte texte texte texte :<br/>
+                            . . • Texte texte.<br/>
+                            . . • Texte texte.<br/>
+                            <br/>
+                            Texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                            texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte.<br/>
+                            Texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte
+                            texte texte texte texte texte texte texte texte texte texte texte texte texte texte texte.
+                        </p>
+            <a data-info="{'relativeLevel': '-2'}" class="doc-sub-title">Bla "B."</a><br/>
+                <a data-info="{'relativeLevel': '+1'}" class="doc-sub-title doc-sub-title-preceeded-by-no-text">Bla "B.A"</a><br/>
+                    <a data-info="{'relativeLevel': '+1'}" class="doc-sub-title doc-sub-title-preceeded-by-no-text">Bla "B.A.A." - Qq. diagrammes</a><br/>
+                        <p class="doc-text">
+                            <b><u>Schématisations :</u></b> Qq. diagrammes :<br/>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <div>
+                                <div style="text-align: center;"><b><u>Flowchart</u></b></div>
+                                <div class="mermaid" style="height: fit-content; text-align: center; border: 1px solid;">
+                                    graph TD
+                                        Start -- > Stop
+                                </div>
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align: center;"><b><u>Sequence diagram</u></b></div>
+                                <div class="mermaid" style="height: fit-content; text-align: center; border: 1px solid;">
+                                    sequenceDiagram
+                                        participant John
+                                        participant Alice
+                                        Alice->>John: Hello John, how are you?
+                                        John-- >>Alice: Great
+                                </div>
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align: center;"><b><u>Gantt</u></b></div>
+                                <div class="mermaid" style="height: fit-content; text-align: center; border: 1px solid;">
+                                    gantt
+                                        title A Gantt Diagram
+                                        dateFormat  YYYY-MM-DD
+                                        section Section
+                                        A task           :a1, 2014-01-01, 30d
+                                        Another task     :after a1  , 20d
+                                        section Another
+                                        Task in sec      :2014-01-12  , 12d
+                                        another task      : 24d
+                                </div>
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align: center;"><b><u>Cycle de vie d'un composant Angular</u></b></div>
+                                <div class="mermaid" style="height: fit-content; text-align: center; border: 1px solid;">
+                                    sequenceDiagram
+                                        participant C as Composant
+                                        participant S as Service
+                                        participant P as Parent
+
+                                        Note over C: Création du composant
+                                        C->>S: Injection des dépendances
+                                        C->>P: Envoi des données d'entrée
+                                        C->>C: Initialisation des données d'entrée
+                                        C->>C: Création du template
+                                        C->>C: Exécution du composant
+                                        Note over C: Interactions avec l'utilisateur
+                                        C->>C: Destruction du composant
+                                        C->>C: Nettoyage des ressources
+                                </div>
+                            </div>
+                        </p>
+                    <a data-info="{'relativeLevel': '0'}" class="doc-sub-title">Bla "B.A.B"</a><br/>
+                        <p class="doc-text">
+                            Bla bla bla.<br/>
+                            <br/>
+                            Bla bla bla.<br/>
+                            <br/>
+                            Bla bla bla.<br/>
+                            <br/>
+                            <b><u>Blablance :</u></b><br/>
+                            • Item de blablance.<br/>
+                            • Item de blablance.<br/>
+                            <b><em>Emphasized bold text.</em></b>
+                        </p>
+                <a data-info="{'relativeLevel': '-1'}" class="doc-sub-title">Bla "B.B."</a><br/>
+                    <a data-info="{'relativeLevel': '+1'}" class="doc-sub-title doc-sub-title-preceeded-by-no-text">Bla "B.B.A."</a><br/>
+                        <p class="doc-text">
+                            Texte ... .<br/>
+                            <br/>
+                            Texte ... .<br/>
+                            Texte ... .
+                        </p>
+            <a data-info="{'relativeLevel': '-2'}" class="doc-sub-title">Bla "C."</a><br/>
+                <p class="doc-text">
+                    Texte ... .<br/>
+                    <br/>
+                    Texte ... .
+                </p>
+                <a data-info="{'relativeLevel': '+1'}" class="doc-sub-title">Qq. arbres</a><br/>
+                    <p class="doc-text">
+                        <b><u>Arbre 1 - Racine</u></b><br/>
+                        . . Noeud/Branche<br/>
+                        . . . . Noeud/Branche<br/>
+                        . . . . . . Noeud/Feuille<br/>
+                        . . . . . . Noeud/Feuille<br/>
+                        . . Noeud/Feuille<br/>
+                        . . Noeud/Branche<br/>
+                        . . . . Noeud/Feuille<br/>
+                        . . . . . . Noeud/Feuille<br/>
+                        . . . . Noeud/Feuille<br/>
+                        . . Noeud/Branche<br/>
+                        . . . . Noeud/Feuille<br/>
+                        . . . . Noeud/Feuille<br/>
+                        . . Noeud/Branche<br/>
+                        . . . . Noeud/Feuille<br/>
+                        . . Noeud/Branche<br/>
+                        . . . . Noeud/Branche<br/>
+                        . . . . . . Noeud/Branche<br/>
+                        . . . . . . . . Noeud/Feuille<br/>
+                        . . . . . . . . Noeud/Branche<br/>
+                        . . . . . . . . . . Noeud/Feuille<br/>
+                        . . . . Noeud/Feuille<br/>
+                        <br/>
+                        <b><u>Arbre 2 - Racine</u></b><br/>
+                        ... Noeud/Branche<br/>
+                        ... ... Noeud/Branche<br/>
+                        ... ... ... Noeud/Feuille<br/>
+                        ... ... ... Noeud/Feuille<br/>
+                        ... Noeud/Feuille<br/>
+                        ... Noeud/Branche<br/>
+                        ... ... Noeud/Feuille<br/>
+                        ... ... ... Noeud/Feuille<br/>
+                        ... ... Noeud/Feuille<br/>
+                        ... Noeud/Branche<br/>
+                        ... ... Noeud/Feuille<br/>
+                        ... ... Noeud/Feuille<br/>
+                        ... Noeud/Branche<br/>
+                        ... ... Noeud/Feuille<br/>
+                        ... Noeud/Branche<br/>
+                        ... ... Noeud/Branche<br/>
+                        ... ... ... Noeud/Branche<br/>
+                        ... ... ... ... Noeud/Feuille<br/>
+                        ... ... ... ... Noeud/Branche<br/>
+                        ... ... ... ... ... Noeud/Feuille<br/>
+                        ... ... Noeud/Feuille<br/>
+                <a data-info="{'relativeLevel': '0'}" class="doc-sub-title">Liste</a><br/>
+                    <b><u>Liste</u></b><br/>
+                    <ul class="std">
+                        <li class="std">
+                            Item 1 - Line 1<br/>
+                            Item 1 - Line 2<br/>
+                            Item 1 - Line 3
+                        </li>
+                        <li class="std">
+                            Item 2 - Line 1<br/>
+                            Item 2 - Line 2<br/>
+                            Item 2 - Line 3
+                        </li>
+                    </ul>
+                </p>
+            <a data-info="{'relativeLevel': '-1'}" class="doc-sub-title">Bla in fine "D."</a><br/>
+                <a data-info="{'relativeLevel': '+1'}" class="doc-sub-title doc-sub-title-preceeded-by-no-text">Bla "D.A."</a><br/>
+                <a data-info="{'relativeLevel': '0'}" class="doc-sub-title doc-sub-title-preceeded-by-no-text">Bla "D.B."</a><br/>
+                <a data-info="{'relativeLevel': '0'}" class="doc-sub-title doc-sub-title-preceeded-by-no-text">Bla "D.C."</a><br/>
+-->
+    </body>
+</html>
