@@ -164,6 +164,24 @@
 
                             </div>
 
+                            <!-- Champ pour costPerFloor -->
+                            <div class="form-group row width-100">
+                                <label class="col-3 control-label">{{ trans('lang.costPerFloor') }}<span class="required-field"></span></label>
+                                <div class="col-7">
+                                    <input type="number" class="form-control costPerFloor">
+                                    <div class="form-text text-muted">{{ trans('lang.costPerFloor_help') }}</div>
+                                </div>
+                            </div>
+
+                            <!-- Champ pour costPerCubeMeter -->
+                            <div class="form-group row width-100">
+                                <label class="col-3 control-label">{{ trans('lang.costPerCubeMeter') }}<span class="required-field"></span></label>
+                                <div class="col-7">
+                                    <input type="number" class="form-control costPerCubeMeter">
+                                    <div class="form-text text-muted">{{ trans('lang.costPerCubeMeter_help') }}</div>
+                                </div>
+                            </div>
+
                             <div class="form-group row width-50">
 
                                 <label class="col-3 control-label">{{ trans('lang.image') }}</label>
@@ -336,6 +354,10 @@
 
                     $('.height').val(data.height);
 
+                    $('.costPerFloor').val(data.costPerFloor);
+
+                    $('.costPerCubeMeter').val(data.costPerCubeMeter);
+
                     $('.description').val(data.description);
 
                     if (data.image != '' && data.image != null) {
@@ -393,6 +415,10 @@
         var width = $(".width").val();
 
         var description = $(".description").val();
+
+        var costPerFloor = $(".costPerFloor").val();
+
+        var costPerCubeMeter = $(".costPerCubeMeter").val();
 
         var enable = false;
 
@@ -456,6 +482,22 @@
 
             window.scrollTo(0, 0);
 
+        } else if (costPerCubeMeter == '') {
+            $(".error_top").show();
+
+            $(".error_top").html("");
+
+            $(".error_top").append("<p>{{ trans('lang.costPerCubeMeter_help') }}</p>");
+
+            window.scrollTo(0, 0);
+        } else if (costPerFloor == '') {
+            $(".error_top").show();
+
+            $(".error_top").html("");
+
+            $(".error_top").append("<p>{{ trans('lang.costPerFloor_help') }}</p>");
+
+            window.scrollTo(0, 0);
         } else if (description == '') {
 
             $(".error_top").show();
@@ -485,6 +527,10 @@
                         'width': width,
 
                         'kmCharge': kmCharge,
+
+                        'costPerCubeMeter': costPerCubeMeter,
+
+                        'costPerFloor': costPerFloor,
 
                         'enable': enable,
 
@@ -535,6 +581,10 @@
                         'width': width,
 
                         'kmCharge': kmCharge,
+                        
+                        'costPerCubeMeter': costPerCubeMeter,
+
+                        'costPerFloor': costPerFloor,
 
                         'enable': enable,
 

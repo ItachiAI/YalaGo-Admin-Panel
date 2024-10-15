@@ -228,7 +228,7 @@ $role_has_permission = App\Models\Permission::where('role_id',$user->role_id)->p
         @if(in_array('moving',$role_has_permission))
         <li>
             <a class="has-arrow waves-effect waves-dark moving_menu" href="#" aria-expanded="false">
-                <i class="mdi mdi-truck"></i>
+                <i class="mdi mdi-truck-delivery"></i>
                 <span class="hide-menu">{{trans('lang.moving')}}</span>
             </a>
             <ul aria-expanded="false" class="collapse moving_sub_menu">

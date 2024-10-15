@@ -56,6 +56,8 @@
                                     <th>{{trans('lang.length')}}</th>
                                     <th>{{trans('lang.width')}}</th>
                                     <th>{{trans('lang.height')}}</th>
+                                    <th>{{trans('lang.costPerFloor')}}</th> <!-- Ajout coût par étage -->
+                                    <th>{{trans('lang.costPerCubeMeter')}}</th> <!-- Ajout coût par mètre cube -->
                                     <th>{{trans('lang.status')}}</th>
                                     <th>{{trans('lang.actions')}}</th>
                                 </tr>
@@ -167,52 +169,69 @@
     }
 
     async function getListData(val) {
-        var html = '';
-        html = html + '<tr>';
-        newdate = '';
-        var id = val.id;
-        var route1 = '{{route("moving-vehicles.save",":id")}}';
-        route1 = route1.replace(':id', id);
-        var trroute1 = '';
-        trroute1 = trroute1.replace(':id', id);
+    var html = '';
+    html = html + '<tr>';
+    newdate = '';
+    var id = val.id;
+    var route1 = '{{route("moving-vehicles.save",":id")}}';
+    route1 = route1.replace(':id', id);
+    var trroute1 = '';
+    trroute1 = trroute1.replace(':id', id);
 
-        if (checkDeletePermission) {
-
-            html = html + '<td class="delete-all"><input type="checkbox" id="is_open_' + id + '" class="is_open" dataId="' + id + '"><label class="col-3 control-label"\n' +
-                'for="is_open_' + id + '" ></label></td>';
-        }
-        if (val.image != '' && val.image != null) {
-            html = html + '<td><img class="rounded" style="width:50px" src="' + val.image + '" alt="image"></td>';
-        } else {
-            html = html + '<td><img class="rounded" style="width:50px" src="' + defaultImg + '" alt="image"></td>';
-        }
-        html = html + '<td><a href="' + route1 + '">' + val.name + '</a></td>';
-
-        var kmCharge = parseFloat(val.kmCharge);
-        if (symbolAtRight) {
-            html += '<td>' + kmCharge.toFixed(decimal_degits) + currentCurrency + '</td>';
-        } else {
-            html += '<td>' + currentCurrency + kmCharge.toFixed(decimal_degits) + '</td>';
-        }
-        html = html + '<td>' + val.length + ' Meter</td>';
-        html = html + '<td>' + val.width + ' Meter</td>';
-        html = html + '<td>' + val.height + ' Meter</td>';
-
-        if (val.enable) {
-            html = html + '<td><label class="switch"><input type="checkbox" checked id="' + val.id + '" name="isActive"><span class="slider round"></span></label></td>';
-        } else {
-            html = html + '<td><label class="switch"><input type="checkbox" id="' + val.id + '" name="isActive"><span class="slider round"></span></label></td>';
-        }
-        html = html + '<td class="action-btn"><a href="' + route1 + '"><i class="fa fa-edit"></i></a>';
-
-        if (checkDeletePermission) {
-
-            html = html + '<a id="' + val.id + '" class="delete-btn" name="moving-vehicle-delete" href="javascript:void(0)"><i class="fa fa-trash"></i></a>';
-        }
-
-        html = html + '</td></tr>';
-        return html;
+    if (checkDeletePermission) {
+        html = html + '<td class="delete-all"><input type="checkbox" id="is_open_' + id + '" class="is_open" dataId="' + id + '"><label class="col-3 control-label"\n' +
+            'for="is_open_' + id + '" ></label></td>';
     }
+    if (val.image != '' && val.image != null) {
+        html = html + '<td><img class="rounded" style="width:50px" src="' + val.image + '" alt="image"></td>';
+    } else {
+        html = html + '<td><img class="rounded" style="width:50px" src="' + defaultImg + '" alt="image"></td>';
+    }
+    html = html + '<td><a href="' + route1 + '">' + val.name + '</a></td>';
+
+    var kmCharge = parseFloat(val.kmCharge);
+    if (symbolAtRight) {
+        html += '<td>' + kmCharge.toFixed(decimal_degits) + currentCurrency + '</td>';
+    } else {
+        html += '<td>' + currentCurrency + kmCharge.toFixed(decimal_degits) + '</td>';
+    }
+
+    html = html + '<td>' + val.length + ' Meter</td>';
+    html = html + '<td>' + val.width + ' Meter</td>';
+    html = html + '<td>' + val.height + ' Meter</td>';
+
+    // Ajouter costPerFloor
+    if (val.costPerFloor !== undefined) {
+        var costPerFloor = parseFloat(val.costPerFloor).toFixed(2);
+        html += '<td>' + currentCurrency + costPerFloor + '</td>';
+    } else {
+        html += '<td>' + currentCurrency + '0.00</td>';
+    }
+
+    // Ajouter costPerCubeMeter
+    if (val.costPerCubeMeter !== undefined) {
+        var costPerCubeMeter = parseFloat(val.costPerCubeMeter).toFixed(2);
+        html += '<td>' + currentCurrency + costPerCubeMeter + '</td>';
+    } else {
+        html += '<td>' + currentCurrency + '0.00</td>';
+    }
+
+    if (val.enable) {
+        html = html + '<td><label class="switch"><input type="checkbox" checked id="' + val.id + '" name="isActive"><span class="slider round"></span></label></td>';
+    } else {
+        html = html + '<td><label class="switch"><input type="checkbox" id="' + val.id + '" name="isActive"><span class="slider round"></span></label></td>';
+    }
+
+    html = html + '<td class="action-btn"><a href="' + route1 + '"><i class="fa fa-edit"></i></a>';
+
+    if (checkDeletePermission) {
+        html = html + '<a id="' + val.id + '" class="delete-btn" name="moving-vehicle-delete" href="javascript:void(0)"><i class="fa fa-trash"></i></a>';
+    }
+
+    html = html + '</td></tr>';
+    return html;
+}
+
 
     $("#is_active").click(function () {
         $("#movingTable .is_open").prop('checked', $(this).prop('checked'));

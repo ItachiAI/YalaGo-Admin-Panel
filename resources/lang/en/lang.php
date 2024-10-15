@@ -1128,6 +1128,8 @@ return [
     'length_help'=>'Enter Length',
     'width'=>'Width',
     'width_help'=>'Enter Width (in meter)',
+    'costPerCubeMeter_help' => 'Enter Cost per m³',
+    'costPerFloor_help' => 'Enter Cost per floor',
     'height'=>'Height',
     'height_help'=>'Enter Height (in meter)',
     'freight_vehicle_edit'=>'Edit Freight Vehicle',
@@ -1199,6 +1201,8 @@ return [
     'google_map_note'=>'Google Maps Provides accurate data but comes with a cost.',
     'open_street_map_note'=>'OpenStreetMap (OSM)  An open-source option that is free to use.',
     'recommended_note'=>'Recommended Google Maps for accurate data',
-    'note'=>'Note'
+    'note'=>'Note',
+    'costPerFloor' => 'Cost per Floor',
+    'costPerCubeMeter' => 'Cost per m³'
 ];
 ?>
